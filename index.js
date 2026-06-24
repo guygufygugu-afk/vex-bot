@@ -20,7 +20,9 @@ const client = new Client({
     ]
 });
 
+// ID-urile tale de configurare pentru Server și Roluri
 const CONFIG = {
+    SERVER_ID: '1519071231951896667', // ID-ul serverului tău adăugat corect!
     OWNER_ROLE_ID: '1519074184062308623',
     STAFF_ROLE_ID: '1519225072517255180'
 };
@@ -40,24 +42,36 @@ const commands = [
 ];
 
 // ==========================================
-// CONFIRMARE CONEXIUNE ȘI AUTO-ÎNREGISTRARE COMENZI
+// CONFIRMARE CONEXIUNE ȘI AUTO-ÎNREGISTRARE INSTANTANEE
 // ==========================================
 client.once('ready', async () => {
-    console.log(`✅ SUCCES: Botul s-a conectat la Discord ca: ${client.user.tag}`);
+    console.log(`\n✅ SUCCES DEPLIN: Botul s-a conectat la Discord ca: ${client.user.tag}\n`);
     
     try {
-        console.log('🔄 Se înregistrează comenzile slash în Discord...');
-        await client.application.commands.set(commands);
-        console.log('🎯 Toate comenzile slash au fost activate cu succes la nivel global!');
+        console.log(`🔄 Se înregistrează comenzile slash INSTANT pe serverul: ${CONFIG.SERVER_ID}...`);
+        
+        const guild = await client.guilds.fetch(CONFIG.SERVER_ID);
+        if (guild) {
+            await guild.commands.set(commands);
+            console.log('🎯 [SERVER] Toate comenzile slash au fost activate și sunt vizibile ACUM!');
+        }
     } catch (error) {
-        console.error('❌ Eroare la trimiterea comenzilor către Discord:', error);
+        console.error('❌ Eroare la trimiterea rapidă a comenzilor pe server:', error);
+        
+        // Plan de rezervă: dacă apar probleme, le trimitem global
+        try {
+            await client.application.commands.set(commands);
+            console.log('🎯 [GLOBAL] Activat global ca rezervă.');
+        } catch (err) {
+            console.error('❌ Eșec total la înregistrarea comenzilor:', err);
+        }
     }
 });
 
-// Loguri de debug pentru a vedea de ce se blochează conexiunea
+// LOGURI DE REȚEA
 client.on('debug', info => {
-    if (info.toLowerCase().includes('ready') || info.toLowerCase().includes('hit') || info.toLowerCase().includes('fail') || info.toLowerCase().includes('warn')) {
-        console.log(`⚙️ [Discord Debug]: ${info}`);
+    if (info.includes('Connect') || info.includes('gateway') || info.includes('identif') || info.includes('rate')) {
+        console.log(`⚙️ [Discord Rețea]: ${info}`);
     }
 });
 
@@ -65,8 +79,6 @@ client.on('debug', info => {
 // HANDLER INTERACȚIUNI (COMENZI ȘI BUTOANE)
 // ==========================================
 client.on('interactionCreate', async interaction => {
-    
-    // 1. PROCESARE COMENZI SLASH
     if (interaction.isChatInputCommand()) {
         const { commandName, options } = interaction;
 
@@ -164,7 +176,6 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-    // 2. PROCESARE APĂSĂRI DE BUTOANE (TICHETE)
     if (interaction.isButton()) {
         try {
             if (interaction.customId === 'create_ticket') {
@@ -254,21 +265,18 @@ client.on('messageCreate', async message => {
     }
 });
 
-// ==========================================
-// VERIFICĂRI ȘI PORNIRE BOT
-// ==========================================
 client.on('error', (error) => {
     console.error('Eroare întâmpinată de clientul Discord:', error);
 });
 
-// Diagnostic inițial pentru Token
+// Pornire bot cu igienizare Token
 if (!process.env.TOKEN) {
     console.error("❌ EROARE CRITICĂ: Variabila de mediu 'TOKEN' lipsește complet de pe Render!");
 } else {
-    console.log("🔑 Verificare: Variabila 'TOKEN' a fost detectată în siguranță pe Render. Se inițiază conexiunea...");
-}
-
-client.login(process.env.TOKEN).catch(err => {
-    console.error("❌ EROARE CONEXIUNE DISCORD: Token-ul furnizat este invalid sau expirat!", err);
-});
+    const cleanToken = process.env.TOKEN.replace(/['"]+/g, '').trim();
+    console.log("🔑 Verificare: Se inițiază conexiunea securizată cu Discord...");
+    client.login(cleanToken).catch(err => {
+        console.error("❌ EROARE CONEXIUNE DISCORD: Autentificarea a eșuat!", err);
+    });
+          }
                     
