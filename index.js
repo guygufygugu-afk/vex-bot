@@ -28,17 +28,52 @@ const CONFIG = {
 };
 
 // ==========================================
-// DEFINIRE COMENZI SLASH
+// DEFINIRE COMENZI SLASH (CORECTATĂ PENTRU DISCORD API)
 // ==========================================
 const commands = [
-    { name: 'kick', description: 'Dă afară un membru de pe server', options: [{ name: 'user', type: 'user', description: 'Membrul pe care vrei să-l dai afară', required: true }] },
-    { name: 'ban', description: 'Banează un utilizator', options: [{ name: 'user', type: 'user', description: 'Utilizatorul pe care vrei să-l banezi', required: true }] },
-    { name: 'timeout', description: 'Pune un utilizator în timeout', options: [{ name: 'user', type: 'user', description: 'Utilizatorul pe care vrei să-l pui în timeout', required: true }, { name: 'time', type: 'integer', description: 'Timpul în minute', required: true }] },
-    { name: 'untimeout', description: 'Scoate un utilizator din timeout', options: [{ name: 'user', type: 'user', description: 'Utilizatorul pe care vrei să-l scoți din timeout', required: true }] },
-    { name: 'lock', description: 'Blochează canalul curent', options: [] },
-    { name: 'unlock', description: 'Deblochează canalul curent', options: [] },
-    { name: 'clear', description: 'Șterge mesaje', options: [{ name: 'amount', type: 'integer', description: 'Numărul de mesaje pe care vrei să le ștergi', required: true }] },
-    { name: 'ticket', description: 'Trimite panoul pentru crearea tichetelor de suport', options: [] }
+    { 
+        name: 'kick', 
+        description: 'Dă afară un membru de pe server', 
+        options: [{ name: 'user', type: 6, description: 'Membrul pe care vrei să-l dai afară', required: true }] // type 6 = USER
+    },
+    { 
+        name: 'ban', 
+        description: 'Banează un utilizator', 
+        options: [{ name: 'user', type: 6, description: 'Utilizatorul pe care vrei să-l banezi', required: true }] // type 6 = USER
+    },
+    { 
+        name: 'timeout', 
+        description: 'Pune un utilizator în timeout', 
+        options: [
+            { name: 'user', type: 6, description: 'Utilizatorul pe care vrei să-l pui în timeout', required: true }, // type 6 = USER
+            { name: 'time', type: 4, description: 'Timpul în minute', required: true } // type 4 = INTEGER
+        ] 
+    },
+    { 
+        name: 'untimeout', 
+        description: 'Scoate un utilizator din timeout', 
+        options: [{ name: 'user', type: 6, description: 'Utilizatorul pe care vrei să-l scoți din timeout', required: true }] // type 6 = USER
+    },
+    { 
+        name: 'lock', 
+        description: 'Blochează canalul curent', 
+        options: [] 
+    },
+    { 
+        name: 'unlock', 
+        description: 'Deblochează canalul curent', 
+        options: [] 
+    },
+    { 
+        name: 'clear', 
+        description: 'Șterge mesaje', 
+        options: [{ name: 'amount', type: 4, description: 'Numărul de mesaje pe care vrei să le ștergi', required: true }] // type 4 = INTEGER
+    },
+    { 
+        name: 'ticket', 
+        description: 'Trimite panoul pentru crearea tichetelor de suport', 
+        options: [] 
+    }
 ];
 
 // ==========================================
