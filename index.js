@@ -6,7 +6,7 @@ http.createServer((req, res) => {
     res.write("Botul este online!");
     res.end();
 }).listen(process.env.PORT || 3000, () => {
-    console.log("🚀 Serverul de monitoring web a pornit!");
+    console.log("🚀 Serverul de monitoring web a pornit cu succes!");
 });
 
 const { Client, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -26,13 +26,6 @@ const CONFIG = {
 };
 
 // ==========================================
-// CONFIRMARE CONEXIUNE DISCORD
-// ==========================================
-client.once('ready', () => {
-    console.log(`✅ SUCCES: Botul s-a conectat la Discord ca: ${client.user.tag}`);
-});
-
-// ==========================================
 // DEFINIRE COMENZI SLASH
 // ==========================================
 const commands = [
@@ -47,6 +40,28 @@ const commands = [
 ];
 
 // ==========================================
+// CONFIRMARE CONEXIUNE ȘI AUTO-ÎNREGISTRARE COMENZI
+// ==========================================
+client.once('ready', async () => {
+    console.log(`✅ SUCCES: Botul s-a conectat la Discord ca: ${client.user.tag}`);
+    
+    try {
+        console.log('🔄 Se înregistrează comenzile slash în Discord...');
+        await client.application.commands.set(commands);
+        console.log('🎯 Toate comenzile slash au fost activate cu succes la nivel global!');
+    } catch (error) {
+        console.error('❌ Eroare la trimiterea comenzilor către Discord:', error);
+    }
+});
+
+// Loguri de debug pentru a vedea de ce se blochează conexiunea
+client.on('debug', info => {
+    if (info.toLowerCase().includes('ready') || info.toLowerCase().includes('hit') || info.toLowerCase().includes('fail') || info.toLowerCase().includes('warn')) {
+        console.log(`⚙️ [Discord Debug]: ${info}`);
+    }
+});
+
+// ==========================================
 // HANDLER INTERACȚIUNI (COMENZI ȘI BUTOANE)
 // ==========================================
 client.on('interactionCreate', async interaction => {
@@ -59,7 +74,6 @@ client.on('interactionCreate', async interaction => {
             const target = options.getMember('user');
             const reason = 'Fără motiv specificat';
 
-            // Comanda /ticket (Trimiți panoul pe canalul unde vrei sistemul)
             if (commandName === 'ticket') {
                 if (!interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) {
                     return interaction.reply({ content: '❌ Nu ai permisiunea de a folosi această comandă!', flags: 64 });
@@ -153,29 +167,27 @@ client.on('interactionCreate', async interaction => {
     // 2. PROCESARE APĂSĂRI DE BUTOANE (TICHETE)
     if (interaction.isButton()) {
         try {
-            // Când cineva apasă pe butonul "Deschide Tichet"
             if (interaction.customId === 'create_ticket') {
                 await interaction.deferReply({ flags: 64 });
 
-                // Creează canalul text pe loc și ascunde-l de ceilalți membri
                 const ticketChannel = await interaction.guild.channels.create({
                     name: `ticket-${interaction.user.username}`,
                     type: 0, 
                     permissionOverwrites: [
                         {
-                            id: interaction.guild.id, // @everyone este blocat
+                            id: interaction.guild.id, 
                             deny: [PermissionFlagsBits.ViewChannel],
                         },
                         {
-                            id: interaction.user.id, // Utilizatorul primește acces complet
+                            id: interaction.user.id, 
                             allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
                         },
                         {
-                            id: CONFIG.OWNER_ROLE_ID, // Owner-ul primește acces
+                            id: CONFIG.OWNER_ROLE_ID, 
                             allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
                         },
                         {
-                            id: CONFIG.STAFF_ROLE_ID, // Staff-ul primește acces
+                            id: CONFIG.STAFF_ROLE_ID, 
                             allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory],
                         }
                     ],
@@ -183,7 +195,7 @@ client.on('interactionCreate', async interaction => {
 
                 const welcomeEmbed = new EmbedBuilder()
                     .setTitle('🎫 Tichet Suport Deschis')
-                    .setDescription(`Salut ${interaction.user}!\nTe rugăm să detaliezi cererea ta aici. Un administrator (<@&${CONFIG.STAFF_ROLE_ID}> / <@&${CONFIG.OWNER_ROLE_ID}>) te va asista imediat.\n\nPentru a închide biletul, apasă pe butonul de mai jos.`)
+                    .setDescription(`Salut ${interaction.user}!\nTe rugăm să detaliezi cererea ta aici. Un administrator te va asista imediat.\n\nPentru a închide biletul, apasă pe butonul de mai jos.`)
                     .setColor(0x00FF00);
 
                 const closeRow = new ActionRowBuilder().addComponents(
@@ -195,7 +207,7 @@ client.on('interactionCreate', async interaction => {
                 );
 
                 await ticketChannel.send({ 
-                    content: `${interaction.user} | Echipa a fost alertată.`, 
+                    content: `${interaction.user} | Echipa a fost notificată.`, 
                     embeds: [welcomeEmbed], 
                     components: [closeRow] 
                 });
@@ -203,7 +215,6 @@ client.on('interactionCreate', async interaction => {
                 return interaction.editReply({ content: `✅ Tichetul tău a fost generat aici: ${ticketChannel}` });
             }
 
-            // Când cineva apasă pe butonul "Închide Tichet"
             if (interaction.customId === 'close_ticket') {
                 await interaction.reply({ content: '🔒 Acest tichet va fi șters definitiv în 5 secunde...' });
                 setTimeout(async () => {
@@ -244,19 +255,20 @@ client.on('messageCreate', async message => {
 });
 
 // ==========================================
-// AUTO-RECONECTARE
+// VERIFICĂRI ȘI PORNIRE BOT
 // ==========================================
 client.on('error', (error) => {
-    console.error('Eroare de rețea:', error);
+    console.error('Eroare întâmpinată de clientul Discord:', error);
 });
 
-setInterval(() => {
-    if (client.uptime && (Date.now() - client.readyTimestamp > 600000)) {
-        if (client.ws.status !== 0) {
-            process.exit(1);
-        }
-    }
-}, 60000);
+// Diagnostic inițial pentru Token
+if (!process.env.TOKEN) {
+    console.error("❌ EROARE CRITICĂ: Variabila de mediu 'TOKEN' lipsește complet de pe Render!");
+} else {
+    console.log("🔑 Verificare: Variabila 'TOKEN' a fost detectată în siguranță pe Render. Se inițiază conexiunea...");
+}
 
-client.login(process.env.TOKEN).catch(err => console.error("Eroare Token:", err));
-                                  
+client.login(process.env.TOKEN).catch(err => {
+    console.error("❌ EROARE CONEXIUNE DISCORD: Token-ul furnizat este invalid sau expirat!", err);
+});
+                    
