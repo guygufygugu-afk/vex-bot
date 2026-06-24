@@ -1,3 +1,12 @@
+// Server fictiv pentru a păstra portul deschis pe Render
+const http = require('http');
+http.createServer((req, res) => {
+    res.write("Botul este online!");
+    res.end();
+}).listen(process.env.PORT || 3000, () => {
+    console.log("Serverul de monitorizare a pornit cu succes!");
+});
+
 const { Client, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const client = new Client({
