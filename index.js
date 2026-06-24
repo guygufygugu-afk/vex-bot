@@ -253,7 +253,7 @@ client.on('interactionCreate', async interaction => {
     } catch (error) {
         console.error("Eroare la procesarea comenzii slash:", error);
     }
-
+    )};
 // --- GESTIONARE COMENZI TEXT CU PREFIXUL "+" ---
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith('+')) return;
@@ -345,5 +345,4 @@ setInterval(() => {
         }
     }
 }, 60000);
-
 client.login(process.env.TOKEN).catch(err => console.error("Eroare fatală la conectarea Token-ului:", err));
