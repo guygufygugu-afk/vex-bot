@@ -253,7 +253,6 @@ client.on('interactionCreate', async interaction => {
     } catch (error) {
         console.error("Eroare la procesarea comenzii slash:", error);
     }
-});
 
 // --- GESTIONARE COMENZI TEXT CU PREFIXUL "+" ---
 client.on('messageCreate', async message => {
