@@ -20,7 +20,7 @@ const client = new Client({
     ]
 });
 
-// ID-urile tale
+// ID-urile tale de configurare
 const CONFIG = {
     SERVER_ID: '1519071231951896667', 
     OWNER_ROLE_ID: '1519074184062308623',
@@ -62,7 +62,7 @@ client.on('interactionCreate', async interaction => {
         const { commandName, options } = interaction;
 
         try {
-            // 1. TICKET PANEL SUPERIOR
+            // 1. PANOU TICHETE ELEGANT
             if (commandName === 'ticket') {
                 if (!interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) {
                     return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
@@ -106,7 +106,7 @@ client.on('interactionCreate', async interaction => {
                 return interaction.reply({ content: `✅ Am șters ${amount} mesaje.`, flags: 64 });
             }
 
-            // 4. COMENZI CU TARGET (KICK / BAN / TIMEOUT)
+            // 4. MODERARE (KICK / BAN / TIMEOUT)
             const target = options.getMember('user');
             const reason = 'Fără motiv specificat';
 
@@ -141,14 +141,14 @@ client.on('interactionCreate', async interaction => {
 
         } catch (error) {
             console.error(`Eroare la comanda ${commandName}:`, error);
-            const replyData = { content: '❌ Eroare! Verifică permisiunile botului!', flags: 64 };
+            const replyData = { content: '❌ Eroare internă la executarea comenzii!', flags: 64 };
             if (interaction.replied || interaction.deferred) await interaction.followUp(replyData).catch(() => {});
             else await interaction.reply(replyData).catch(() => {});
         }
     }
 
     // ==========================================
-    // GESTIONARE BUTOANE (TICHETE CATEGORIZATE)
+    // GESTIONARE OPERAȚIUNI BUTOANE (TICHETE)
     // ==========================================
     if (interaction.isButton()) {
         try {
@@ -162,44 +162,45 @@ client.on('interactionCreate', async interaction => {
 
                 if (customId === 'ticket_reward') {
                     categoryName = 'reward';
-                    welcomeMessage = 'Ai deschis un tichet pentru revendicarea unui premiu! Te rugăm să ne oferi o dovadă și detaliile premiului.';
+                    welcomeMessage = 'Ai deschis un tichet pentru **revendicarea unui premiu**! Te rugăm să trimiți dovezile necesare (screenshot/detalii) în acest chat.';
                 } else if (customId === 'ticket_support') {
                     categoryName = 'suport';
-                    welcomeMessage = 'Cum te putem ajuta? Descrie detaliat problema ta, iar un membru al echipei noastre îți va răspunde în scurt timp.';
+                    welcomeMessage = 'Cum te putem ajuta? Te rugăm să descrii detaliat problema sau întrebarea ta, iar echipa îți va răspunde imediat.';
                 } else if (customId === 'ticket_purchase') {
                     categoryName = 'purchase';
-                    welcomeMessage = 'Dorești să achiziționezi ceva de pe serverul nostru? Lasă-ne aici detaliile și ce metodă de plată preferi.';
+                    welcomeMessage = 'Dorești să faci o **achiziție** sau o donație? Lasă-ne scris ce anume te interesează și metoda de plată dorită.';
                 }
 
-                // Crearea canalului
+                // Generare canal dedicat
                 const ticketChannel = await interaction.guild.channels.create({
                     name: `🎫・${categoryName}-${interaction.user.username}`,
                     type: 0, 
                     permissionOverwrites: [
                         { id: interaction.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-                        { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
-                        { id: CONFIG.OWNER_ROLE_ID, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] },
-                        { id: CONFIG.STAFF_ROLE_ID, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] }
+                        { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks] },
+                        { id: CONFIG.OWNER_ROLE_ID, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles] },
+                        { id: CONFIG.STAFF_ROLE_ID, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles] }
                     ],
                 });
 
                 const welcomeEmbed = new EmbedBuilder()
-                    .setTitle(`🎫 Tichet | ${categoryName.toUpperCase()}`)
-                    .setDescription(`Salutare ${interaction.user}!\n\n${welcomeMessage}`)
-                    .setColor(0x00FF00);
+                    .setTitle(`🎫 Tichet Nou | ${categoryName.toUpperCase()}`)
+                    .setDescription(`Salutare ${interaction.user}!\n\n${welcomeMessage}\n\n*Pentru a închide această sesiune, folosește butonul de mai jos.*`)
+                    .setColor(0x00FF00)
+                    .setTimestamp();
 
                 const closeRow = new ActionRowBuilder().addComponents(
                     new ButtonBuilder().setCustomId('close_ticket').setLabel('Închide Tichet').setStyle(ButtonStyle.Danger).setEmoji('🔒')
                 );
 
-                // AICI SE REALIZEAZĂ NOTIFICAREA / TAGUL PENTRU STAFF ȘI OWNER
+                // AICI SE REALIZEAZĂ NOTIFICAREA PRIN PING DIRECT CĂTRE ROLURILE TALE DE STAFF ȘI OWNER
                 await ticketChannel.send({ 
-                    content: `🔔 Un nou tichet a fost deschis de ${interaction.user}! | Mențiune staff: <@&${CONFIG.STAFF_ROLE_ID}> <@&${CONFIG.OWNER_ROLE_ID}>`, 
+                    content: `🔔 **Tichet deschis!** Mențiune Departament: <@&${CONFIG.STAFF_ROLE_ID}> <@&${CONFIG.OWNER_ROLE_ID}> (Utilizator: ${interaction.user})`, 
                     embeds: [welcomeEmbed], 
                     components: [closeRow] 
                 });
                 
-                return interaction.editReply({ content: `✅ Tichetul tău a fost deschis cu succes aici: ${ticketChannel}` });
+                return interaction.editReply({ content: `✅ Tichetul tău a fost generat cu succes! Click aici: ${ticketChannel}` });
             }
 
             if (customId === 'close_ticket') {
@@ -210,20 +211,22 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Comanda help simplificată (fără +lb)
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith('+')) return;
     const cmd = message.content.split(' ')[0].toLowerCase();
     
     if (cmd === '+help') {
         const helpEmbed = new EmbedBuilder()
-            .setTitle('🤖 Meniu Comenzi')
-            .setDescription('Toate comenzile funcționează acum prin `/` (slash).\n\n**/ticket** - Generează panoul nou de suport.\n**/lock & /unlock** - Blochează / deblochează chat-ul.\n**/clear** - Șterge mesajele rapid.');
+            .setTitle('🤖 Sistem de Comenzi VEX')
+            .setDescription('Toate funcțiile principale au fost mutate complet pe comenzi rapide tip **Slash (`/`)**:\n\n**/ticket** - Generează panoul avansat de asistență.\n**/lock & /unlock** - Securizează rapid canalul de chat curent.\n**/clear** - Curăță instant mesajele nedorite.');
         return message.reply({ embeds: [helpEmbed] });
     }
 });
 
 if (!process.env.TOKEN) {
-    console.error("❌ TOKEN LIPSĂ!");
+    console.error("❌ Variabila de mediu 'TOKEN' lipsește!");
 } else {
-    client.login(process.env.TOKEN.replace(/['"]+/g, '').trim()).catch(err => console.error("❌ EROARE CONEXIUNE:", err));
+    client.login(process.env.TOKEN.replace(/['"]+/g, '').trim()).catch(err => console.error("❌ Eroare autentificare Discord:", err));
                     }
+                    
