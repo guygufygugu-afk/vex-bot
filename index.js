@@ -9,7 +9,7 @@ http.createServer((req, res) => {
     console.log("🚀 Serverul de monitoring web a pornit cu succes!");
 });
 
-const { Client, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ApplicationCommandOptionType } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -28,16 +28,35 @@ const CONFIG = {
 };
 
 // ==========================================
-// DEFINIRE COMENZI SLASH
+// DEFINIRE COMENZI SLASH (CORECTATE PENTRU V14)
 // ==========================================
 const commands = [
-    { name: 'kick', description: 'Dă afară un membru de pe server', options: [{ name: 'user', type: 6, description: 'Membru', required: true }] },
-    { name: 'ban', description: 'Banează un utilizator', options: [{ name: 'user', type: 6, description: 'Utilizator', required: true }] },
-    { name: 'timeout', description: 'Pune un utilizator în timeout', options: [{ name: 'user', type: 6, description: 'Utilizator', required: true }, { name: 'time', type: 4, description: 'Minute', required: true }] },
-    { name: 'untimeout', description: 'Scoate un utilizator din timeout', options: [{ name: 'user', type: 6, description: 'Utilizator', required: true }] },
+    { 
+        name: 'kick', 
+        description: 'Dă afară un membru de pe server', 
+        options: [{ name: 'user', type: ApplicationCommandOptionType.User, description: 'Membru', required: true }] 
+    },
+    { 
+        name: 'ban', 
+        description: 'Banează un utilizator', 
+        options: [{ name: 'user', type: ApplicationCommandOptionType.User, description: 'Utilizator', required: true }] 
+    },
+    { 
+        name: 'timeout', 
+        description: 'Pune un utilizator în timeout', 
+        options: [
+            { name: 'user', type: ApplicationCommandOptionType.User, description: 'Utilizator', required: true }, 
+            { name: 'time', type: ApplicationCommandOptionType.Integer, description: 'Minute', required: true }
+        ] 
+    },
+    { 
+        name: 'untimeout', 
+        description: 'Scoate un utilizator din timeout', 
+        options: [{ name: 'user', type: ApplicationCommandOptionType.User, description: 'Utilizator', required: true }] 
+    },
     { name: 'lock', description: 'Blochează canalul curent', options: [] },
     { name: 'unlock', description: 'Deblochează canalul curent', options: [] },
-    { name: 'clear', description: 'Șterge mesaje', options: [{ name: 'amount', type: 4, description: 'Număr mesaje', required: true }] },
+    { name: 'clear', description: 'Șterge mesaje', options: [{ name: 'amount', type: ApplicationCommandOptionType.Integer, description: 'Număr mesaje', required: true }] },
     { name: 'ticket', description: 'Trimite panoul pentru crearea tichetelor', options: [] }
 ];
 
@@ -47,10 +66,10 @@ client.once('ready', async () => {
         const guild = await client.guilds.fetch(CONFIG.SERVER_ID);
         if (guild) {
             await guild.commands.set(commands);
-            console.log('🎯 [SERVER] Comenzi slash reîncărcate!');
+            console.log('🎯 [SERVER] Comenzi slash reîncărcate cu succes!');
         }
     } catch (error) {
-        console.error('❌ Eroare comenzi:', error);
+        console.error('❌ Eroare la reîncărcarea comenzilor:', error);
     }
 });
 
@@ -65,12 +84,12 @@ client.on('interactionCreate', async interaction => {
             // 1. PANOU TICHETE ELEGANT
             if (commandName === 'ticket') {
                 if (!interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) {
-                    return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
+                    return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
                 }
                 
                 const panelEmbed = new EmbedBuilder()
                     .setTitle('🌟 Centru de Asistență VEX')
-                    .setDescription('Bine ai venit la sistemul oficial de suport!\n\nSelectează categoria potrivită nevoilor tale apăsând pe unul dintre butoanele de mai jos:\n\n🎁 **Claim Reward** - Pentru revendicarea premiilor.\n🛠️ **Suport** - Pentru întrebări, probleme sau raportări.\n🛒 **Purchase** - Pentru achiziții, donații și tranzacții.')
+                    .setDescription('Bine ai venit la sistemul oficial de suport!\n\nSelectează categoria potraită nevoilor tale apăsând pe unul dintre butoanele de mai jos:\n\n🎁 **Claim Reward** - Pentru revendicarea premiilor.\n🛠️ **Suport** - Pentru întrebări, probleme sau raportări.\n🛒 **Purchase** - Pentru achiziții, donații și tranzacții.')
                     .setColor(0x2B2D31) 
                     .setImage('https://i.imgur.com/K1HMTf7.png') 
                     .setFooter({ text: 'Sistem Securizat de Tichete', iconURL: client.user.displayAvatarURL() });
@@ -86,24 +105,25 @@ client.on('interactionCreate', async interaction => {
 
             // 2. LOCK & UNLOCK
             if (commandName === 'lock') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
                 await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
                 return interaction.reply({ content: `🔒 Canalul a fost blocat.` });
             }
 
             if (commandName === 'unlock') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
                 await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: null });
                 return interaction.reply({ content: `🔓 Canalul a fost deblocat.` });
             }
 
             // 3. CLEAR
             if (commandName === 'clear') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.ManageMessages) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
                 const amount = options.getInteger('amount');
-                if (amount < 1 || amount > 100) return interaction.reply({ content: '❌ Introdu un număr între 1 și 100!', flags: 64 });
+                if (amount < 1 || amount > 100) return interaction.reply({ content: '❌ Introdu un număr între 1 și 100!', ephemeral: true });
+                
                 await interaction.channel.bulkDelete(amount, true);
-                return interaction.reply({ content: `✅ Am șters ${amount} mesaje.`, flags: 64 });
+                return interaction.reply({ content: `✅ Am șters ${amount} mesaje.`, ephemeral: true });
             }
 
             // 4. MODERARE (KICK / BAN / TIMEOUT)
@@ -111,39 +131,39 @@ client.on('interactionCreate', async interaction => {
             const reason = 'Fără motiv specificat';
 
             if (commandName === 'kick') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
-                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
+                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', ephemeral: true });
                 await target.kick(reason);
                 return interaction.reply({ content: `✅ ${target.user.username} a fost dat afară.` });
             }
 
             if (commandName === 'ban') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
-                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
+                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', ephemeral: true });
                 await target.ban({ reason });
                 return interaction.reply({ content: `✅ ${target.user.username} a fost banat.` });
             }
 
             if (commandName === 'timeout') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
-                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
+                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', ephemeral: true });
                 const min = options.getInteger('time');
                 await target.timeout(min * 60 * 1000, reason);
                 return interaction.reply({ content: `✅ ${target.user.username} este în timeout.` });
             }
 
             if (commandName === 'untimeout') {
-                if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', flags: 64 });
-                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', flags: 64 });
+                if (!interaction.member.permissions.has(PermissionFlagsBits.ModerateMembers) && !interaction.member.roles.cache.has(CONFIG.OWNER_ROLE_ID) && !interaction.member.roles.cache.has(CONFIG.STAFF_ROLE_ID)) return interaction.reply({ content: '❌ Nu ai permisiunea!', ephemeral: true });
+                if (!target) return interaction.reply({ content: '❌ Membrul nu a fost găsit!', ephemeral: true });
                 await target.timeout(null);
                 return interaction.reply({ content: `✅ Timeout scos pentru ${target.user.username}.` });
             }
 
         } catch (error) {
             console.error(`Eroare la comanda ${commandName}:`, error);
-            const replyData = { content: '❌ Eroare internă la executarea comenzii!', flags: 64 };
-            if (interaction.replied || interaction.deferred) await interaction.followUp(replyData).catch(() => {});
-            else await interaction.reply(replyData).catch(() => {});
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: '❌ A apărut o eroare la executarea acestei comenzi!', ephemeral: true }).catch(() => {});
+            }
         }
     }
 
@@ -155,7 +175,7 @@ client.on('interactionCreate', async interaction => {
             const { customId } = interaction;
 
             if (['ticket_reward', 'ticket_support', 'ticket_purchase'].includes(customId)) {
-                await interaction.deferReply({ flags: 64 });
+                await interaction.deferReply({ ephemeral: true });
                 
                 let categoryName = '';
                 let welcomeMessage = '';
@@ -193,7 +213,7 @@ client.on('interactionCreate', async interaction => {
                     new ButtonBuilder().setCustomId('close_ticket').setLabel('Închide Tichet').setStyle(ButtonStyle.Danger).setEmoji('🔒')
                 );
 
-                // AICI SE REALIZEAZĂ NOTIFICAREA PRIN PING DIRECT CĂTRE ROLURILE TALE DE STAFF ȘI OWNER
+                // Notificare prin ping direct către rolurile tale de Staff și Owner
                 await ticketChannel.send({ 
                     content: `🔔 **Tichet deschis!** Mențiune Departament: <@&${CONFIG.STAFF_ROLE_ID}> <@&${CONFIG.OWNER_ROLE_ID}> (Utilizator: ${interaction.user})`, 
                     embeds: [welcomeEmbed], 
@@ -211,7 +231,7 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-// Comanda help simplificată (fără +lb)
+// Comanda help simplificată
 client.on('messageCreate', async message => {
     if (message.author.bot || !message.content.startsWith('+')) return;
     const cmd = message.content.split(' ')[0].toLowerCase();
@@ -228,5 +248,5 @@ if (!process.env.TOKEN) {
     console.error("❌ Variabila de mediu 'TOKEN' lipsește!");
 } else {
     client.login(process.env.TOKEN.replace(/['"]+/g, '').trim()).catch(err => console.error("❌ Eroare autentificare Discord:", err));
-                    }
-                    
+                }
+            
